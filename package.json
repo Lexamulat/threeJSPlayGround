@@ -2,7 +2,6 @@
   "name": "awersomefront",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development webpack-dev-server --mode development",
     "prod": "cross-env NODE_ENV=production webpack --mode production --profile --dispaly-modules --display-reasons"
