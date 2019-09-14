@@ -128,6 +128,8 @@ if (!_DEV_) {
             cache: true,
             parallel: true,
             exclude: inProject('node_modules'),
+            exclude: inProject('node_modules'),
+
             terserOptions: {
                 output: {
                     comments: false,

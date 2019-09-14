@@ -13,5 +13,5 @@ module.exports = {
     /** HTML template */
     htmlTemplate: 'index.html',
     /** Enable sourceMap */
-    enableSourceMap: true
+    enableSourceMap: false
 };
