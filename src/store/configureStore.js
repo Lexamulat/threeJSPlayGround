@@ -15,7 +15,7 @@ export default function configureStore(initialState) {
     const middleware = [thunk, httpRequestMiddleware, routerMiddleware(history)];
 
     const store = createStore(
-        connectRouter(history)(makeRootReducer(allReducers)),
+        (makeRootReducer(history, allReducers)),
         initialState,
         composeEnhancers(applyMiddleware(...middleware)),
     );

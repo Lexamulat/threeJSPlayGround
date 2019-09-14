@@ -4,6 +4,7 @@ import { ConnectedRouter } from 'connected-react-router';
 import history from 'store/history';
 
 import TestContainer from 'components/Test/TestContainer';
+import LoginPageContainer from 'components/LoginPage/LoginPageContainer';
 
 
 export default class Router extends Component {
@@ -16,7 +17,11 @@ export default class Router extends Component {
                         path="/"
                         component={TestContainer}
                     />
-
+                    <Route
+                        exact
+                        path="/login"
+                        component={LoginPageContainer}
+                    />
                 </Switch>
             </ConnectedRouter>
         );

@@ -1,8 +1,14 @@
 import React, { Fragment } from 'react';
+import PropTypes from 'prop-types';
 
 import styles from './Test.scss'
 
 export default class Test extends React.Component {
+
+    static propTypes = {
+        onNavigate: PropTypes.func,
+    };
+
     constructor(props) {
         super(props);
         this.state = {
@@ -10,7 +16,8 @@ export default class Test extends React.Component {
         };
     }
     setIsOpenToFalse = () => {
-        this.setState({ isOpen: false })
+        this.setState({ isOpen: false });
+        this.props.onNavigate('/login')
     }
 
     render() {
