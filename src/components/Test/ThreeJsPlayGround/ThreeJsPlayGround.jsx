@@ -35,8 +35,8 @@ class ThreeJsPlayGround extends React.Component {
         this.renderer = new THREE.WebGLRenderer({ canvas: this.mount, antialias: false });
         this.renderer.setSize(width, height);
 
-        this.camera.position.set(-20, 30, 50);
-        this.camera.lookAt(0, 0, 0);
+        this.camera.position.set(-20, 30, 100);
+        // this.camera.lookAt(0, 0, 0);
 
     }
 
@@ -84,6 +84,36 @@ class ThreeJsPlayGround extends React.Component {
         this.refs.stats.appendChild(this.stats2.dom);
     }
 
+    handlePressAndReplaceCam = (event) => {
+        const code = event.keyCode
+        //37-←  38-↑  39-→ 40-↓  
+        console.log('key', code);
+
+        switch (code) {
+            case 38:
+                //up
+                break;
+            case 40:
+                //down
+                break;
+            case 37:
+                //left
+                break;
+            case 39:
+                //right
+                break;
+            default:
+                console.log('unused key pressed')
+        }
+
+    }
+
+
+
+    addCameraControls = () => {
+        document.addEventListener("keydown", this.handlePressAndReplaceCam, false);
+    }
+
     componentDidMount() {
 
         if (!WEBGL.isWebGLAvailable()) {
@@ -91,12 +121,13 @@ class ThreeJsPlayGround extends React.Component {
             return
         }
 
-
         this.statsInit();
 
         this.initiateCamera();
 
         this.addAsixs();
+
+        this.addCameraControls();
 
         const geometry = new THREE.BoxGeometry(10, 10, 10);
 
@@ -105,12 +136,21 @@ class ThreeJsPlayGround extends React.Component {
             // this.addCube(geometry, 0x8844aa, 0),
             this.addCube(geometry, 0xaa8844, 20),
         ];
+        const radius = 7;
+        const widthSegments = 12;
+        const heightSegments = 8;
+        const geometry2 = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
+        const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
 
-
+        const mesh = new THREE.Mesh(geometry2, material);
+        this.scene.add(mesh);
 
 
         this.animate();
+    }
 
+    componentWillUnmount() {
+        document.removeEventListener("keydown", this.handlePressAndReplaceCam, false);
     }
 
 

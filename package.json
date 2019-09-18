@@ -55,6 +55,7 @@
     "webpack-dev-server": "^3.8.0"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-optional-chaining": "^7.6.0",
     "terser-webpack-plugin": "^2.0.1",
     "webpack-cli": "^3.3.8"
   }
