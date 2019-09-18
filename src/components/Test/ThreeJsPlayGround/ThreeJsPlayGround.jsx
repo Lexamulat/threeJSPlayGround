@@ -35,8 +35,25 @@ class ThreeJsPlayGround extends React.Component {
         this.renderer = new THREE.WebGLRenderer({ canvas: this.mount, antialias: false });
         this.renderer.setSize(width, height);
 
-        this.camera.position.set(-20, 30, 100);
+        // this.camera.position.set(-20, 30, 100);
+        this.camera.position.set(0, 0, 100);
+
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+
+
+        //reset controls btns
+        this.controls.mouseButtons = {
+            ORBIT: 2,
+            ZOOM: 1,
+            PAN: 0
+        }
+
+        // this.controls.target.set( x, y, z );
+        // this.camera.lookAt();
+
+        // this.controls.enableRotate = false;
+
+
         // this.camera.lookAt(0, 0, 0);
 
     }
@@ -123,8 +140,20 @@ class ThreeJsPlayGround extends React.Component {
         }
 
     }
-    handleClick(event) {
-        console.log('click event', event.type);
+    handleClick = (event) => {
+        // console.log('click event', event.type);
+        // this.camera.getWorldDirection(dirVector);
+        // console.log('GET IT', this.camera.getWorldDirection())
+
+        // let vector = new THREE.Vector3(0, 0, -1);
+        // vector.applyQuaternion(this.camera.quaternion);
+
+        // const { x, y, z } = vector
+        // console.log('x, y, z', x, y, z)
+        // this.controls.target.set(x, y, z+10);
+        // this.camera.position.copy(this.controls.center).add(new THREE.Vector3(x, y, z+10));
+
+        // var vector = new THREE.Vector3( 0, 0, - 1 );
 
     }
 
@@ -161,7 +190,7 @@ class ThreeJsPlayGround extends React.Component {
 
         this.addAsixs();
 
-        this.addCameraControls();
+        // this.addCameraControls();
 
         const geometry = new THREE.BoxGeometry(10, 10, 10);
 
@@ -247,29 +276,21 @@ class ThreeJsPlayGround extends React.Component {
         const { width, height } = this.props;
 
         return (
-            <Fragment>
-                <div
-                    // onMouseMove={this.handleMouseMove}
-                    onClick={this.handleClick}
-
-                >
-                    dd
-                </div>
-                <div ref="stats"
-                    onMouseMove={this.handleMouseMove}
+            <div ref="stats"
+                // onMouseMove={this.handleMouseMove}
 
                 // onMouseDown={this.handleMouseDown}
                 // onMouseUp={this.handleMouseUp}
-                >
-                    <canvas
-                        className={styles.boardCanvas}
-                        style={{ width, height }}
-                        ref={(mount) => {
-                            this.mount = mount;
-                        }}
-                    />
-                </div>
-            </Fragment>
+                onClick={this.handleClick}
+            >
+                <canvas
+                    className={styles.boardCanvas}
+                    style={{ width, height }}
+                    ref={(mount) => {
+                        this.mount = mount;
+                    }}
+                />
+            </div>
         );
     }
 }
