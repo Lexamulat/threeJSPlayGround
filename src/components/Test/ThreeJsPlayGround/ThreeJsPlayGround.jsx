@@ -9,7 +9,7 @@ import styles from './ThreeJsPlayGround.scss';
 
 
 import Stats from 'stats.js';
-
+const OrbitControls = require('three-orbit-controls')(THREE);
 
 class ThreeJsPlayGround extends React.Component {
 
@@ -28,7 +28,7 @@ class ThreeJsPlayGround extends React.Component {
         const fov = 75;
         const aspect = width / height;
         const near = 0.1;
-        const far = 300;
+        const far = 3000;
 
         this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
@@ -36,6 +36,7 @@ class ThreeJsPlayGround extends React.Component {
         this.renderer.setSize(width, height);
 
         this.camera.position.set(-20, 30, 100);
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         // this.camera.lookAt(0, 0, 0);
 
     }
@@ -85,30 +86,61 @@ class ThreeJsPlayGround extends React.Component {
     }
 
     handlePressAndReplaceCam = (event) => {
-        const code = event.keyCode
+        let code = event ?.keyCode;
+
+        const step = 5;
         //37-←  38-↑  39-→ 40-↓  
         console.log('key', code);
+
+        // w a s d
+        if (code == 87) code = 38;
+        else if (code == 83) code = 40;
+        else if (code == 65) code = 37;
+        else if (code == 68) code = 39;
+
 
         switch (code) {
             case 38:
                 //up
+                // this.camera.position.setX(this.camera.position.x + 1);
+                this.camera.position.setY(this.camera.position.y + step);
                 break;
             case 40:
                 //down
+                // this.camera.position.setY(this.camera.position.y + 1);
+                this.camera.position.setY(this.camera.position.y - step);
                 break;
             case 37:
                 //left
+                this.camera.position.setX(this.camera.position.x - step);
                 break;
             case 39:
                 //right
+                this.camera.position.setX(this.camera.position.x + step);
                 break;
             default:
                 console.log('unused key pressed')
         }
 
     }
+    handleClick(event) {
+        console.log('click event', event.type);
 
+    }
 
+    handleMouseMove = (event) => {
+        //!! note that react synchetic event is always empty cause its always reused 
+        //work only with active mouse left button
+        if (event.buttons != 1) return;
+        this.camera.position.setX(this.camera.position.x - event.movementX);
+
+        // console.log('move event', event.movementX);
+
+    }
+    handleMouseUp = (event) => {
+        console.log('UP');
+        document.removeEventListener("mousemove", this.handleMouseMove, false);
+    }
 
     addCameraControls = () => {
         document.addEventListener("keydown", this.handlePressAndReplaceCam, false);
@@ -120,6 +152,8 @@ class ThreeJsPlayGround extends React.Component {
             alert('Your browser does not support webgl')
             return
         }
+
+        // document.addEventListener("click", this.handleClick, false);
 
         this.statsInit();
 
@@ -213,15 +247,29 @@ class ThreeJsPlayGround extends React.Component {
         const { width, height } = this.props;
 
         return (
-            <div ref="stats">
-                <canvas
-                    className={styles.boardCanvas}
-                    style={{ width, height }}
-                    ref={(mount) => {
-                        this.mount = mount;
-                    }}
-                />
-            </div>
+            <Fragment>
+                <div
+                    // onMouseMove={this.handleMouseMove}
+                    onClick={this.handleClick}
+
+                >
+                    dd
+                </div>
+                <div ref="stats"
+                    onMouseMove={this.handleMouseMove}
+
+                // onMouseDown={this.handleMouseDown}
+                // onMouseUp={this.handleMouseUp}
+                >
+                    <canvas
+                        className={styles.boardCanvas}
+                        style={{ width, height }}
+                        ref={(mount) => {
+                            this.mount = mount;
+                        }}
+                    />
+                </div>
+            </Fragment>
         );
     }
 }
