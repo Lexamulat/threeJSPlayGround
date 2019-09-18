@@ -10,13 +10,63 @@ import styles from './ThreeJsPlayGround.scss';
 
 class ThreeJsPlayGround extends React.Component {
 
-
     constructor(props) {
         super(props);
         this.state = {
-            isOpen: true,
         };
     }
+
+    initiateCamera = () => {
+        const width = this.mount.clientWidth;
+        const height = this.mount.clientHeight;
+
+        this.scene = new THREE.Scene();
+
+        const fov = 75;
+        const aspect = width / height;
+        const near = 0.1;
+        const far = 300;
+
+        this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.mount });
+        this.renderer.setSize(width, height);
+
+        this.camera.position.set(-20, 30, 150);
+        this.camera.lookAt(0, 0, 0);
+
+    }
+
+    addAsixs = () => {
+        //x
+        const materialLineX = new THREE.LineBasicMaterial({ color: 'blue' });
+        const geometryX = new THREE.Geometry();
+        geometryX.vertices.push(new THREE.Vector3(-50, 0, 0));
+        geometryX.vertices.push(new THREE.Vector3(50, 0, 0));
+
+        this.lineX = new THREE.Line(geometryX, materialLineX);
+        //y
+        const materialLineY = new THREE.LineBasicMaterial({ color: 'yellow' });
+        const geometryY = new THREE.Geometry();
+        geometryY.vertices.push(new THREE.Vector3(0, -50, 0));
+        geometryY.vertices.push(new THREE.Vector3(0, 50, 0));
+
+        this.lineY = new THREE.Line(geometryY, materialLineY);
+
+        //z
+        const materialLineZ = new THREE.LineBasicMaterial({ color: 'red' });
+        const geometryZ = new THREE.Geometry();
+        geometryZ.vertices.push(new THREE.Vector3(0, 0, -50));
+        geometryZ.vertices.push(new THREE.Vector3(0, 0, 50));
+
+        this.lineZ = new THREE.Line(geometryZ, materialLineZ);
+
+        this.scene.add(this.lineX);
+        this.scene.add(this.lineY);
+        this.scene.add(this.lineZ);
+
+    }
+
     componentDidMount() {
 
         if (!WEBGL.isWebGLAvailable()) {
@@ -24,57 +74,26 @@ class ThreeJsPlayGround extends React.Component {
             return
         }
 
-        const width = this.mount.clientWidth;
-        const height = this.mount.clientHeight;
 
-        console.log('width', width, 'height', height);
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 500);
+        this.initiateCamera();
 
-        console.log('cam', this.camera)
-
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.mount });
-        this.renderer.setSize(width, height);
-
+        this.addAsixs();
 
         const geometry = new THREE.BoxGeometry(10, 10, 10);
-        const material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-        this.cube = new THREE.Mesh(geometry, material);
-
-        this.cube.position.x = 2;
-
-
-        // this.scene.add(this.cube);
 
         this.cubes = [
             this.addCube(geometry, 0x44aa88, -20),
-            this.addCube(geometry, 0x8844aa, 0),
+            // this.addCube(geometry, 0x8844aa, 0),
             this.addCube(geometry, 0xaa8844, 20),
         ];
 
 
 
 
-
-        const materialLine = new THREE.LineBasicMaterial({ color: 0x0000ff });
-
-        const geometry2 = new THREE.Geometry();
-        geometry2.vertices.push(new THREE.Vector3(10, 10, 0));
-        geometry2.vertices.push(new THREE.Vector3(0, 10, 0));
-        // geometry2.vertices.push(new THREE.Vector3(10, 0, 0));
-
-        this.line = new THREE.Line(geometry2, materialLine);
-
-        this.scene.add(this.line);
-
-
-        this.camera.position.set(0, 0, 100);
-        this.camera.lookAt(0, 0, 0);
-
-
         this.animate();
 
     }
+
 
     addCube = (geometry, color, x) => {
         const material = new THREE.MeshBasicMaterial({ color });
@@ -102,10 +121,10 @@ class ThreeJsPlayGround extends React.Component {
         }
 
         this.cubes.forEach((cube, ndx) => {
-            
-            cube.rotation.x +=0.01;
+
+            cube.rotation.x += 0.01;
             // cube.rotation.y +=0.2;
-          });
+        });
 
         this.renderer.render(this.scene, this.camera);
         this.frameId = window.requestAnimationFrame(this.animate);
@@ -114,8 +133,9 @@ class ThreeJsPlayGround extends React.Component {
 
     resizeRendererToDisplaySize(renderer) {
         const canvas = renderer.domElement;
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
+        const pixelRatio = window.devicePixelRatio;
+        const width = canvas.clientWidth * pixelRatio | 0;
+        const height = canvas.clientHeight * pixelRatio | 0;
         const needResize = canvas.width !== width || canvas.height !== height;
         if (needResize) {
             renderer.setSize(width, height, false);
