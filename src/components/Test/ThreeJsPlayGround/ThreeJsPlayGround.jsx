@@ -8,6 +8,9 @@ import fitDimensions from 'components/helpers/fitDimensions.jsx';
 import styles from './ThreeJsPlayGround.scss';
 
 
+import Stats from 'stats.js';
+
+
 class ThreeJsPlayGround extends React.Component {
 
     constructor(props) {
@@ -29,10 +32,10 @@ class ThreeJsPlayGround extends React.Component {
 
         this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.mount });
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.mount, antialias: false });
         this.renderer.setSize(width, height);
 
-        this.camera.position.set(-20, 30, 150);
+        this.camera.position.set(-20, 30, 50);
         this.camera.lookAt(0, 0, 0);
 
     }
@@ -67,6 +70,20 @@ class ThreeJsPlayGround extends React.Component {
 
     }
 
+
+    statsInit = () => {
+        this.stats1 = new Stats();
+        this.stats1.showPanel(0);
+
+        this.refs.stats.appendChild(this.stats1.dom);
+
+        this.stats2 = new Stats();
+        this.stats2.domElement.style.cssText = 'position:absolute;top:0px;left:80px;';
+        this.stats2.showPanel(2);
+
+        this.refs.stats.appendChild(this.stats2.dom);
+    }
+
     componentDidMount() {
 
         if (!WEBGL.isWebGLAvailable()) {
@@ -74,6 +91,8 @@ class ThreeJsPlayGround extends React.Component {
             return
         }
 
+
+        this.statsInit();
 
         this.initiateCamera();
 
@@ -107,6 +126,8 @@ class ThreeJsPlayGround extends React.Component {
     }
 
     animate = () => {
+        this.stats1.begin();
+        this.stats2.begin();
 
         if (!this.mount) return
         // const width = this.mount.clientWidth;
@@ -127,6 +148,9 @@ class ThreeJsPlayGround extends React.Component {
         });
 
         this.renderer.render(this.scene, this.camera);
+
+        this.stats1.end();
+        this.stats2.end();
         this.frameId = window.requestAnimationFrame(this.animate);
 
     }
@@ -149,13 +173,15 @@ class ThreeJsPlayGround extends React.Component {
         const { width, height } = this.props;
 
         return (
-            <canvas
-                className={styles.boardCanvas}
-                style={{ width, height }}
-                ref={(mount) => {
-                    this.mount = mount;
-                }}
-            />
+            <div ref="stats">
+                <canvas
+                    className={styles.boardCanvas}
+                    style={{ width, height }}
+                    ref={(mount) => {
+                        this.mount = mount;
+                    }}
+                />
+            </div>
         );
     }
 }
