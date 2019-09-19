@@ -1,0 +1,8 @@
+//concat spheres by cylinders
+https://stackoverflow.com/questions/9038465/three-js-object3d-cylinder-rotation-to-align-to-a-vector
+
+
+https://stackoverflow.com/questions/15139649/three-js-two-points-one-cylinder-align-issue/15160850#15160850
+
+
+https://stackoverflow.com/questions/15316127/three-js-line-vector-to-cylinder

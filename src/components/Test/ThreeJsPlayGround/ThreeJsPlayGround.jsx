@@ -202,13 +202,47 @@ class ThreeJsPlayGround extends React.Component {
         const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
 
 
-        this.spheres = [
-            this.addSphere(geometry, material, -20, 0, 0),
-            this.addSphere(geometry, material, 20, 0, 0),
-            this.addSphere(geometry, material, 60, 0, 0),
-            this.addSphere(geometry, material, 100, 0, 0),
+        const sphere1Center = new THREE.Vector3(0, 0, 0)
+        const sphere2Center = new THREE.Vector3(-20, 40, 0)
 
+
+        this.spheres = [
+            this.addSphere(geometry, material, sphere1Center),
+            this.addSphere(geometry, material, sphere2Center),
+            // this.addSphere(geometry, material, 20, 0, 0),
+            // this.addSphere(geometry, material, 60, 0, 0),
+            // this.addSphere(geometry, material, 100, 0, 0),
         ];
+
+        const materialLineС = new THREE.LineBasicMaterial({ color: 'black' });
+        const geometryС = new THREE.Geometry();
+        geometryС.vertices.push(new THREE.Vector3(0, 0, 0));
+        geometryС.vertices.push(new THREE.Vector3(-20, 0, 0));
+
+        this.lineС = new THREE.Line(geometryС, materialLineС);
+        // this.scene.add(this.lineС);
+
+
+        const radiusTop = 0.5;
+        const radiusBottom = 0.5;
+        const height = 40;
+        const radialSegments = 7;
+        const geometryCylinder = new THREE.CylinderBufferGeometry(radiusTop, radiusBottom, sphere2Center.length(), radialSegments);
+        const materialCylinder = new THREE.MeshBasicMaterial({ color: 'yellow', wireframe: true });
+
+        const cylinder = new THREE.Mesh(geometryCylinder, materialCylinder);
+
+        const axis = new THREE.Vector3(0, 1, 0);
+        cylinder.quaternion.setFromUnitVectors(axis, sphere2Center.clone().normalize());
+        cylinder.position.copy(sphere2Center.clone().multiplyScalar(0.5));
+        
+        
+        this.scene.add(cylinder);
+
+
+        // this.cylinders = [
+        //     this.addCylinder(geometryCylinder, materialCylinder),
+        // ];
 
 
         this.animate();
@@ -218,13 +252,26 @@ class ThreeJsPlayGround extends React.Component {
         document.removeEventListener("keydown", this.handlePressAndReplaceCam, false);
     }
 
+    addCylinder = (geometry, material, x, y, z) => {
+        const cylinder = new THREE.Mesh(geometry, material);
 
-    addSphere = (geometry, material, x, y, z) => {
+        cylinder.position.x = x;
+        cylinder.position.y = y;
+        cylinder.position.z = z;
+
+        // cylinder.rotateZ(THREE.Math.degToRad(90));
+
+        this.scene.add(cylinder);
+
+        return cylinder;
+    }
+
+    addSphere = (geometry, material, vector) => {
         const sphere = new THREE.Mesh(geometry, material);
+        const { x, y, z } = vector;
+        sphere.position.set(x, y, z);
+        // sphere.position = vector
 
-        sphere.position.x = x;
-        sphere.position.y = y;
-        sphere.position.z = z;
 
 
 
@@ -292,11 +339,11 @@ class ThreeJsPlayGround extends React.Component {
 
         return (
             <div ref="stats"
-                // onMouseMove={this.handleMouseMove}
+            // onMouseMove={this.handleMouseMove}
 
-                // onMouseDown={this.handleMouseDown}
-                // onMouseUp={this.handleMouseUp}
-                onClick={this.handleClick}
+            // onMouseDown={this.handleMouseDown}
+            // onMouseUp={this.handleMouseUp}
+            // onClick={this.handleClick}
             >
                 <canvas
                     className={styles.boardCanvas}
