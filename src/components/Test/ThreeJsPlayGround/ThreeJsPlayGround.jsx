@@ -24,7 +24,7 @@ class ThreeJsPlayGround extends React.Component {
         const height = this.mount.clientHeight;
 
         this.scene = new THREE.Scene();
-
+        this.scene.background = new THREE.Color(0x0A233D);
         const fov = 75;
         const aspect = width / height;
         const near = 0.1;
@@ -47,6 +47,8 @@ class ThreeJsPlayGround extends React.Component {
             ZOOM: 1,
             PAN: 0
         }
+
+        // this.controls.screenSpacePanning = true;
 
         // this.controls.target.set( x, y, z );
         // this.camera.lookAt();
@@ -166,6 +168,7 @@ class ThreeJsPlayGround extends React.Component {
         // console.log('move event', event.movementX);
 
     }
+
     handleMouseUp = (event) => {
         console.log('UP');
         document.removeEventListener("mousemove", this.handleMouseMove, false);
@@ -192,21 +195,20 @@ class ThreeJsPlayGround extends React.Component {
 
         // this.addCameraControls();
 
-        const geometry = new THREE.BoxGeometry(10, 10, 10);
-
-        this.cubes = [
-            this.addCube(geometry, 0x44aa88, -20),
-            // this.addCube(geometry, 0x8844aa, 0),
-            this.addCube(geometry, 0xaa8844, 20),
-        ];
-        const radius = 7;
-        const widthSegments = 12;
+        const radius = 4;
+        const widthSegments = 10;
         const heightSegments = 8;
-        const geometry2 = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
+        const geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
         const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
 
-        const mesh = new THREE.Mesh(geometry2, material);
-        this.scene.add(mesh);
+
+        this.spheres = [
+            this.addSphere(geometry, material, -20, 0, 0),
+            this.addSphere(geometry, material, 20, 0, 0),
+            this.addSphere(geometry, material, 60, 0, 0),
+            this.addSphere(geometry, material, 100, 0, 0),
+
+        ];
 
 
         this.animate();
@@ -217,6 +219,21 @@ class ThreeJsPlayGround extends React.Component {
     }
 
 
+    addSphere = (geometry, material, x, y, z) => {
+        const sphere = new THREE.Mesh(geometry, material);
+
+        sphere.position.x = x;
+        sphere.position.y = y;
+        sphere.position.z = z;
+
+
+
+        this.scene.add(sphere);
+
+
+        return sphere;
+    }
+
     addCube = (geometry, color, x) => {
         const material = new THREE.MeshBasicMaterial({ color });
 
@@ -224,9 +241,9 @@ class ThreeJsPlayGround extends React.Component {
         this.scene.add(cube);
 
         cube.position.x = x;
-
         return cube;
     }
+
 
     animate = () => {
         this.stats1.begin();
@@ -244,11 +261,9 @@ class ThreeJsPlayGround extends React.Component {
 
         }
 
-        this.cubes.forEach((cube, ndx) => {
-
-            cube.rotation.x += 0.01;
-            // cube.rotation.y +=0.2;
-        });
+        // this.cubes.forEach((cube, ndx) => {
+        //     cube.rotation.x += 0.01;
+        // });
 
         this.renderer.render(this.scene, this.camera);
 
