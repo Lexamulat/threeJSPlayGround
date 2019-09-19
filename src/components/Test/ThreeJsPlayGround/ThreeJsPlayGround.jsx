@@ -155,7 +155,7 @@ class ThreeJsPlayGround extends React.Component {
         // this.controls.target.set(x, y, z+10);
         // this.camera.position.copy(this.controls.center).add(new THREE.Vector3(x, y, z+10));
 
-        // var vector = new THREE.Vector3( 0, 0, - 1 );
+        // const vector = new THREE.Vector3( 0, 0, - 1 );
 
     }
 
@@ -202,8 +202,8 @@ class ThreeJsPlayGround extends React.Component {
         const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
 
 
-        const sphere1Center = new THREE.Vector3(0, 0, 0)
-        const sphere2Center = new THREE.Vector3(-20, 40, 0)
+        const sphere1Center = new THREE.Vector3(0, 30, 10)
+        const sphere2Center = new THREE.Vector3(-20, 40, 20)
 
 
         this.spheres = [
@@ -214,42 +214,37 @@ class ThreeJsPlayGround extends React.Component {
             // this.addSphere(geometry, material, 100, 0, 0),
         ];
 
-        const materialLineС = new THREE.LineBasicMaterial({ color: 'black' });
-        const geometryС = new THREE.Geometry();
-        geometryС.vertices.push(new THREE.Vector3(0, 0, 0));
-        geometryС.vertices.push(new THREE.Vector3(-20, 0, 0));
-
-        this.lineС = new THREE.Line(geometryС, materialLineС);
-        // this.scene.add(this.lineС);
-
-
-        const radiusTop = 0.5;
-        const radiusBottom = 0.5;
-        const height = 40;
-        const radialSegments = 7;
-        const geometryCylinder = new THREE.CylinderBufferGeometry(radiusTop, radiusBottom, sphere2Center.length(), radialSegments);
-        const materialCylinder = new THREE.MeshBasicMaterial({ color: 'yellow', wireframe: true });
-
-        const cylinder = new THREE.Mesh(geometryCylinder, materialCylinder);
-
-        const axis = new THREE.Vector3(0, 1, 0);
-        cylinder.quaternion.setFromUnitVectors(axis, sphere2Center.clone().normalize());
-        cylinder.position.copy(sphere2Center.clone().multiplyScalar(0.5));
-        
-        
-        this.scene.add(cylinder);
-
-
-        // this.cylinders = [
-        //     this.addCylinder(geometryCylinder, materialCylinder),
-        // ];
-
+        this.concatTwoVectorsByCylinder(sphere1Center, sphere2Center)
 
         this.animate();
     }
 
     componentWillUnmount() {
         document.removeEventListener("keydown", this.handlePressAndReplaceCam, false);
+    }
+
+    concatTwoVectorsByCylinder = (vstart, vend) => {
+        const HALF_PI = Math.PI * .5;
+        const distance = vstart.distanceTo(vend);
+        const position = vend.clone().add(vstart).divideScalar(2);
+
+        const material = new THREE.MeshBasicMaterial({ color: 'yellow', wireframe: true });
+        
+        const cylinderRadius=1;
+        const numOfSegments=4;
+
+        const cylinder = new THREE.CylinderGeometry(cylinderRadius, cylinderRadius, distance, numOfSegments, numOfSegments, false);
+
+        const orientation = new THREE.Matrix4();
+        const offsetRotation = new THREE.Matrix4();
+        orientation.lookAt(vstart, vend, new THREE.Vector3(0, 1, 0));
+        offsetRotation.makeRotationX(HALF_PI);
+        orientation.multiply(offsetRotation);
+        cylinder.applyMatrix(orientation)
+
+        const mesh = new THREE.Mesh(cylinder, material);
+        mesh.position.set(position.x, position.y, position.z);
+        this.scene.add(mesh);
     }
 
     addCylinder = (geometry, material, x, y, z) => {
@@ -413,7 +408,7 @@ const WEBGL = {
 
         try {
 
-            var canvas = document.createElement('canvas');
+            const canvas = document.createElement('canvas');
             return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
 
         } catch (e) {
@@ -426,7 +421,7 @@ const WEBGL = {
 
     isWebGL2Available: function () {
         try {
-            var canvas = document.createElement('canvas');
+            const canvas = document.createElement('canvas');
             return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
         } catch (e) {
             return false;
@@ -447,19 +442,19 @@ const WEBGL = {
 
     getErrorMessage: function (version) {
 
-        var names = {
+        const names = {
             1: 'WebGL',
             2: 'WebGL 2'
         };
 
-        var contexts = {
+        const contexts = {
             1: window.WebGLRenderingContext,
             2: window.WebGL2RenderingContext
         };
 
-        var message = 'Your $0 does not seem to support <a href="http://khronos.org/webgl/wiki/Getting_a_WebGL_Implementation" style="color:#000">$1</a>';
+        const message = 'Your $0 does not seem to support <a href="http://khronos.org/webgl/wiki/Getting_a_WebGL_Implementation" style="color:#000">$1</a>';
 
-        var element = document.createElement('div');
+        const element = document.createElement('div');
         element.id = 'webglmessage';
         element.style.fontFamily = 'monospace';
         element.style.fontSize = '13px';
