@@ -1,6 +1,8 @@
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 import * as THREE from 'three';
+import * as d3 from 'd3';
+// var simulation = d3.forceSimulation(nodes);
 
 import fitDimensions from 'components/helpers/fitDimensions.jsx';
 
@@ -211,7 +213,7 @@ class ThreeJsPlayGround extends React.Component {
 
 
         for (let i = 0; i < numOfNodes; i++) {
-            masOfNodes[i].weight = masOfNodes[i].length + 1;
+            masOfNodes[i].weight = masOfNodes[i].links.length + 1;
         }
         console.log('NODEs', cloneDeep(masOfNodes));
 
@@ -234,10 +236,11 @@ class ThreeJsPlayGround extends React.Component {
         this.initiateCamera();
 
         this.addAsixs();
+        // this.addCameraControls();
+
 
         const nodes = this.getNodesWithLinks();
 
-        // this.addCameraControls();
 
         const radius = 4;
         const widthSegments = 10;
@@ -245,8 +248,41 @@ class ThreeJsPlayGround extends React.Component {
         const geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
         const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
 
+        const nodeArray = [];
+        const linkArray = [];
+
+        // let nodes_data = [
+        //     { "name": "Travis", "sex": "M" },
+        //     { "name": "Rake", "sex": "M" },
+        //     { "name": "Diana", "sex": "F" },
+        //     { "name": "Rachel", "sex": "F" },
+        //     { "name": "Shawn", "sex": "M" },
+        //     { "name": "Emerald", "sex": "F" }
+        // ]
+
+        // let links_data = [
+        //     { "source": "Travis", "target": "Rake" },
+        //     { "source": "Diana", "target": "Rake" },
+        //     { "source": "Diana", "target": "Rachel" },
+        //     { "source": "Rachel", "target": "Rake" },
+        //     { "source": "Rachel", "target": "Shawn" },
+        //     { "source": "Emerald", "target": "Rachel" }
+        // ]
+        let simulation = d3.forceSimulation()
+            //add nodes
+            .nodes(nodes);
 
 
+        console.log('after', cloneDeep(nodes))
+
+        // var force = d3.force.nodes()
+        //     .nodes(nodeArray)
+        //     .links(linkArray)
+        //     .gravity(.05)
+        //     .distance(80)
+        //     .charge(-100)
+        //     .size([600, 600])
+        //     .start();
 
 
         const sphere1Center = new THREE.Vector3(0, 30, 0)

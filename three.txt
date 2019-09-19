@@ -6,3 +6,7 @@ https://stackoverflow.com/questions/15139649/three-js-two-points-one-cylinder-al
 
 
 https://stackoverflow.com/questions/15316127/three-js-line-vector-to-cylinder
+
+
+//about D3
+https://habr.com/ru/post/302968/
