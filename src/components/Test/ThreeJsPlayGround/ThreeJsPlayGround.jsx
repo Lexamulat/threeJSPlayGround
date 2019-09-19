@@ -22,20 +22,20 @@ class ThreeJsPlayGround extends React.Component {
     }
 
     initiateCamera = () => {
-        const width = this.mount.clientWidth;
-        const height = this.mount.clientHeight;
+        this.width = this.mount.clientWidth;
+        this.height = this.mount.clientHeight;
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x0A233D);
-        const fov = 75;
-        const aspect = width / height;
+        const fov = 70;
+        const aspect = this.width / this.height;
         const near = 0.1;
-        const far = 3000;
+        const far = 2000;
 
         this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
         this.renderer = new THREE.WebGLRenderer({ canvas: this.mount, antialias: false });
-        this.renderer.setSize(width, height);
+        this.renderer.setSize(this.width, this.height);
 
         // this.camera.position.set(-20, 30, 100);
         this.camera.position.set(0, 0, 100);
@@ -207,7 +207,6 @@ class ThreeJsPlayGround extends React.Component {
                 if (!masOfNodes[el].links.includes(i)) {
                     masOfNodes[el].links.push(i)
                 }
-
             });
         }
 
@@ -239,71 +238,95 @@ class ThreeJsPlayGround extends React.Component {
         // this.addCameraControls();
 
 
-        const nodes = this.getNodesWithLinks();
+        this.nodes = this.getNodesWithLinks();
 
 
-        const radius = 4;
-        const widthSegments = 10;
-        const heightSegments = 8;
-        const geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
-        const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
-
-        const nodeArray = [];
-        const linkArray = [];
-
-        // let nodes_data = [
-        //     { "name": "Travis", "sex": "M" },
-        //     { "name": "Rake", "sex": "M" },
-        //     { "name": "Diana", "sex": "F" },
-        //     { "name": "Rachel", "sex": "F" },
-        //     { "name": "Shawn", "sex": "M" },
-        //     { "name": "Emerald", "sex": "F" }
-        // ]
-
-        // let links_data = [
-        //     { "source": "Travis", "target": "Rake" },
-        //     { "source": "Diana", "target": "Rake" },
-        //     { "source": "Diana", "target": "Rachel" },
-        //     { "source": "Rachel", "target": "Rake" },
-        //     { "source": "Rachel", "target": "Shawn" },
-        //     { "source": "Emerald", "target": "Rachel" }
-        // ]
-        let simulation = d3.forceSimulation()
-            //add nodes
-            .nodes(nodes);
 
 
-        console.log('after', cloneDeep(nodes))
+        this.links = [
+            { "source": 0, "target": 1 },
+            { "source": 0, "target": 2 },
+            { "source": 0, "target": 3 },
+            { "source": 0, "target": 4 },
+            { "source": 5, "target": 6 },
+            { "source": 6, "target": 7 },
+        ]
 
-        // var force = d3.force.nodes()
-        //     .nodes(nodeArray)
-        //     .links(linkArray)
-        //     .gravity(.05)
-        //     .distance(80)
-        //     .charge(-100)
-        //     .size([600, 600])
-        //     .start();
+        // var simulation = d3.forceSimulation(nodes)
+        // .force("charge", d3.forceManyBody())
+        // .force("link", d3.forceLink(links_data))
+        // .force("center", d3.forceCenter());
 
 
-        const sphere1Center = new THREE.Vector3(0, 30, 0)
-        const sphere2Center = new THREE.Vector3(-20, 40, 0)
+        // const simulation = d3.forceSimulation(nodes)
+        //     .force("link", d3.forceLink(links).id(d => d.id).distance(0).strength(1))
+        //     .force("charge", d3.forceManyBody().strength(-50))
+        //     .force("x", d3.forceX())
+        //     .force("y", d3.forceY());
 
 
-        this.spheres = [
-            this.addSphere(geometry, material, sphere1Center),
-            this.addSphere(geometry, material, sphere2Center),
-            // this.addSphere(geometry, material, 20, 0, 0),
-            // this.addSphere(geometry, material, 60, 0, 0),
-            // this.addSphere(geometry, material, 100, 0, 0),
-        ];
+        const simulation = d3.forceSimulation(this.nodes)
+            .force("link", d3.forceLink(this.links).id(d => d.id).distance(150))
+            .force("charge", d3.forceManyBody())
+            .force("center", d3.forceCenter(this.width / 2, this.height / 2));
 
-        this.concatTwoVectorsByCylinder(sphere1Center, sphere2Center)
+        // console.log('links after', _.cloneDeep(links))
 
-        this.animate();
+
+        simulation.on("tick", () => {
+            console.log('tick');
+        });
+
+        // setTimeout(() => {
+        //     simulation.stop()
+        //     console.log('STOP');
+        // }, 10)
+        this.startAnimations()
+
+
     }
 
     componentWillUnmount() {
         document.removeEventListener("keydown", this.handlePressAndReplaceCam, false);
+    }
+
+    startAnimations = () => {
+
+
+        console.log('this.links', _.cloneDeep(this.links))
+        console.log('this.nodes', _.cloneDeep(this.nodes))
+
+
+        const radius = 3;
+        const widthSegments = 15;
+        const heightSegments = 20;
+        const geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
+        const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
+
+        this.nodes.forEach(el => {
+            const { x, y } = el
+            const sphereCenter = new THREE.Vector3(x, y, 0)
+            this.addSphere(geometry, material, sphereCenter)
+
+        });
+
+        this.renderLinks(this.links);
+
+
+        this.animate();
+    }
+
+    renderLinks = (links) => {
+        links.forEach(el => {
+            const vector1 = getVectorFromNodeCoordinates(el.source);
+            const vector2 = getVectorFromNodeCoordinates(el.target);
+            this.concatTwoVectorsByCylinder(vector1, vector2)
+        })
+
+        function getVectorFromNodeCoordinates(node) {
+            const { x=vx, y=vy, z = 0 } = node;
+            return new THREE.Vector3(x, y, z)
+        }
     }
 
     concatTwoVectorsByCylinder = (vstart, vend) => {
@@ -313,8 +336,8 @@ class ThreeJsPlayGround extends React.Component {
 
         const material = new THREE.MeshBasicMaterial({ color: 'yellow', wireframe: true });
 
-        const cylinderRadius = 1;
-        const numOfSegments = 4;
+        const cylinderRadius = 0.5;
+        const numOfSegments = 8;
 
         const cylinder = new THREE.CylinderGeometry(cylinderRadius, cylinderRadius, distance, numOfSegments, numOfSegments, false);
 
