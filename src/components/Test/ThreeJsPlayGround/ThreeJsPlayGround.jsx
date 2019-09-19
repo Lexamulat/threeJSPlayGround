@@ -178,6 +178,48 @@ class ThreeJsPlayGround extends React.Component {
         document.addEventListener("keydown", this.handlePressAndReplaceCam, false);
     }
 
+    getNodesWithLinks = () => {
+        const masOfNodes = [];
+
+        const numOfNodes = 20;
+        for (let i = 0; i < numOfNodes; i++) {
+            masOfNodes.push({
+                id: i,
+                name: 'name' + i,
+                links: []
+            });
+        }
+
+        //add links
+
+        masOfNodes[0].links = [1, 2, 3, 4, 6];
+
+        masOfNodes[5].links = [7, 8, 9, 10];
+        masOfNodes[7].links = [6];
+
+
+
+        for (let i = 0; i < numOfNodes; i++) {
+
+            masOfNodes[i].links.forEach(el => {
+                if (!masOfNodes[el].links.includes(i)) {
+                    masOfNodes[el].links.push(i)
+                }
+
+            });
+        }
+
+
+        for (let i = 0; i < numOfNodes; i++) {
+            masOfNodes[i].weight = masOfNodes[i].length + 1;
+        }
+        console.log('NODEs', cloneDeep(masOfNodes));
+
+        return masOfNodes
+
+    }
+
+
     componentDidMount() {
 
         if (!WEBGL.isWebGLAvailable()) {
@@ -193,6 +235,8 @@ class ThreeJsPlayGround extends React.Component {
 
         this.addAsixs();
 
+        const nodes = this.getNodesWithLinks();
+
         // this.addCameraControls();
 
         const radius = 4;
@@ -202,8 +246,11 @@ class ThreeJsPlayGround extends React.Component {
         const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
 
 
-        const sphere1Center = new THREE.Vector3(0, 30, 10)
-        const sphere2Center = new THREE.Vector3(-20, 40, 20)
+
+
+
+        const sphere1Center = new THREE.Vector3(0, 30, 0)
+        const sphere2Center = new THREE.Vector3(-20, 40, 0)
 
 
         this.spheres = [
@@ -229,9 +276,9 @@ class ThreeJsPlayGround extends React.Component {
         const position = vend.clone().add(vstart).divideScalar(2);
 
         const material = new THREE.MeshBasicMaterial({ color: 'yellow', wireframe: true });
-        
-        const cylinderRadius=1;
-        const numOfSegments=4;
+
+        const cylinderRadius = 1;
+        const numOfSegments = 4;
 
         const cylinder = new THREE.CylinderGeometry(cylinderRadius, cylinderRadius, distance, numOfSegments, numOfSegments, false);
 
@@ -292,8 +339,7 @@ class ThreeJsPlayGround extends React.Component {
         this.stats2.begin();
 
         if (!this.mount) return
-        // const width = this.mount.clientWidth;
-        // const height = this.mount.clientHeight;
+
 
 
         if (this.resizeRendererToDisplaySize(this.renderer)) {
@@ -302,10 +348,6 @@ class ThreeJsPlayGround extends React.Component {
             this.camera.updateProjectionMatrix();
 
         }
-
-        // this.cubes.forEach((cube, ndx) => {
-        //     cube.rotation.x += 0.01;
-        // });
 
         this.renderer.render(this.scene, this.camera);
 
