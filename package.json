@@ -54,6 +54,7 @@
     "superagent": "^5.1.0",
     "three": "^0.108.0",
     "three-orbit-controls": "^82.1.0",
+    "three-transform-controls": "^1.0.4",
     "webpack": "^4.39.3",
     "webpack-dev-server": "^3.8.0"
   },

@@ -12,6 +12,10 @@ import styles from './ThreeJsPlayGround.scss';
 
 import Stats from 'stats.js';
 const OrbitControls = require('three-orbit-controls')(THREE);
+const TransformControls = require('three-transform-controls')(THREE);
+
+// var TransformControls = require('../controls/TransformControls')(THREE);
+// import { OrbitControls } from './jsm/controls/OrbitControls.js';
 
 class ThreeJsPlayGround extends React.Component {
 
@@ -49,6 +53,18 @@ class ThreeJsPlayGround extends React.Component {
             ZOOM: 1,
             PAN: 0
         }
+
+
+
+        this.control = new TransformControls(this.camera, this.renderer.domElement);
+        this.control.addEventListener('change', this.render);
+
+        this.control.addEventListener('dragging-changed', function (event) {
+            orbit.enabled = !event.value;
+        });
+
+
+
 
         // this.controls.screenSpacePanning = true;
 
@@ -145,6 +161,31 @@ class ThreeJsPlayGround extends React.Component {
 
     }
     handleClick = (event) => {
+
+        // this.scene.updateMatrixWorld(true);
+        let position = new THREE.Vector3();
+
+        Object.defineProperties(position, {
+
+            x: {
+        
+              get: function() {
+                console.log("get", this.xx)
+                return this.xx;
+              },
+        
+              set: function(x) {
+                console.log("set", x)
+                this.xx = x;
+              }
+        
+            },
+        
+          });
+
+        position.setFromMatrixPosition(this.sphere.matrixWorld);
+        console.log('GET POSITION', this.sphere);
+
         // console.log('click event', event.type);
         // this.camera.getWorldDirection(dirVector);
         // console.log('GET IT', this.camera.getWorldDirection())
@@ -183,7 +224,7 @@ class ThreeJsPlayGround extends React.Component {
     getNodesWithLinks = () => {
         const masOfNodes = [];
 
-        const numOfNodes = 20;
+        const numOfNodes = 1;
         for (let i = 0; i < numOfNodes; i++) {
             masOfNodes.push({
                 id: i,
@@ -194,10 +235,12 @@ class ThreeJsPlayGround extends React.Component {
 
         //add links
 
-        masOfNodes[0].links = [1, 2, 3, 4, 6];
+        // masOfNodes[0].links = [1, 2, 3, 4, 6];
 
-        masOfNodes[5].links = [7, 8, 9, 10];
-        masOfNodes[7].links = [6];
+        // masOfNodes[5].links = [7, 8, 9, 10];
+        // masOfNodes[7].links = [6];
+
+        // masOfNodes[0].links = [1];
 
 
 
@@ -214,7 +257,6 @@ class ThreeJsPlayGround extends React.Component {
         for (let i = 0; i < numOfNodes; i++) {
             masOfNodes[i].weight = masOfNodes[i].links.length + 1;
         }
-        console.log('NODEs', cloneDeep(masOfNodes));
 
         return masOfNodes
 
@@ -244,12 +286,12 @@ class ThreeJsPlayGround extends React.Component {
 
 
         this.links = [
-            { "source": 0, "target": 1 },
-            { "source": 0, "target": 2 },
-            { "source": 0, "target": 3 },
-            { "source": 0, "target": 4 },
-            { "source": 5, "target": 6 },
-            { "source": 6, "target": 7 },
+            // { "source": 0, "target": 1 },
+            // { "source": 0, "target": 2 },
+            // { "source": 0, "target": 3 },
+            // { "source": 0, "target": 4 },
+            // { "source": 5, "target": 6 },
+            // { "source": 6, "target": 7 },
         ]
 
         // var simulation = d3.forceSimulation(nodes)
@@ -264,18 +306,30 @@ class ThreeJsPlayGround extends React.Component {
         //     .force("x", d3.forceX())
         //     .force("y", d3.forceY());
 
+        // var collisionForce = d3.forceCollide(12).strength(1).iterations(100);
 
         const simulation = d3.forceSimulation(this.nodes)
-            .force("link", d3.forceLink(this.links).id(d => d.id).distance(150))
+            .force("link", d3.forceLink(this.links).id(d => d.id))
+            .force("collide", d3.forceCollide(17))
+
+            // .force("collisionForce", collisionForce)
             .force("charge", d3.forceManyBody())
-            .force("center", d3.forceCenter(this.width / 2, this.height / 2));
-
-        // console.log('links after', _.cloneDeep(links))
 
 
-        simulation.on("tick", () => {
-            console.log('tick');
-        });
+        // .force("center", d3.forceCenter());
+
+        // simulation.alpha([])
+        //default
+        simulation.velocityDecay(0.4);
+        // simulation.speedDecay([20]);
+
+        simulation.tick([20])
+
+
+
+        // simulation.on("tick", () => {
+        //     console.log('tick');
+        // });
 
         // setTimeout(() => {
         //     simulation.stop()
@@ -303,10 +357,25 @@ class ThreeJsPlayGround extends React.Component {
         const geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
         const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
 
+        const weightScaleCoef = 0.5;
+
+
         this.nodes.forEach(el => {
+
+            let newGeometry;
+            if (el.weight != 1) {
+                newGeometry = new THREE.SphereBufferGeometry(radius + el.weight * (weightScaleCoef * radius), widthSegments, heightSegments);
+            }
+
             const { x, y } = el
-            const sphereCenter = new THREE.Vector3(x, y, 0)
-            this.addSphere(geometry, material, sphereCenter)
+            const sphereCenter = new THREE.Vector3(x, y, 0);
+            if (newGeometry) {
+                this.addSphere(newGeometry, material, sphereCenter)
+
+            } else {
+                this.addSphere(geometry, material, sphereCenter)
+
+            }
 
         });
 
@@ -324,7 +393,7 @@ class ThreeJsPlayGround extends React.Component {
         })
 
         function getVectorFromNodeCoordinates(node) {
-            const { x=vx, y=vy, z = 0 } = node;
+            const { x = vx, y = vy, z = 0 } = node;
             return new THREE.Vector3(x, y, z)
         }
     }
@@ -368,18 +437,21 @@ class ThreeJsPlayGround extends React.Component {
     }
 
     addSphere = (geometry, material, vector) => {
-        const sphere = new THREE.Mesh(geometry, material);
+        this.sphere = new THREE.Mesh(geometry, material);
         const { x, y, z } = vector;
-        sphere.position.set(x, y, z);
+        this.sphere.position.set(x, y, z);
         // sphere.position = vector
 
 
 
 
-        this.scene.add(sphere);
+        this.scene.add(this.sphere);
+
+        this.control.attach(this.sphere);
+        this.scene.add(this.control);
 
 
-        return sphere;
+        return this.sphere;
     }
 
     addCube = (geometry, color, x) => {
@@ -397,9 +469,7 @@ class ThreeJsPlayGround extends React.Component {
         this.stats1.begin();
         this.stats2.begin();
 
-        if (!this.mount) return
-
-
+        if (!this.mount) return;
 
         if (this.resizeRendererToDisplaySize(this.renderer)) {
             const canvas = this.renderer.domElement;
@@ -435,11 +505,11 @@ class ThreeJsPlayGround extends React.Component {
 
         return (
             <div ref="stats"
-            // onMouseMove={this.handleMouseMove}
+                // onMouseMove={this.handleMouseMove}
 
-            // onMouseDown={this.handleMouseDown}
-            // onMouseUp={this.handleMouseUp}
-            // onClick={this.handleClick}
+                // onMouseDown={this.handleMouseDown}
+                // onMouseUp={this.handleMouseUp}
+                onClick={this.handleClick}
             >
                 <canvas
                     className={styles.boardCanvas}
