@@ -181,9 +181,34 @@ class ThreeJsPlayGround extends React.Component {
         event.preventDefault();
 
         let mouse = new THREE.Vector2();
-        mouse.x = (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
-        mouse.y = - (event.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
+        const { width, height } = this.props;
+        const xDelta = (window.innerWidth - width) / 2;
+        const yDelta = (window.innerHeight - height) / 2;
 
+        // console.log('DELTA', xDelta)
+
+
+
+        // console.log('event.clientX', event.clientX);
+        // console.log('this.renderer.domElement.clientWidth', this.renderer.domElement.clientWidth);
+        // console.log('INNER', window.innerWidth);
+
+
+        // console.log('res', (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1);
+
+
+        let x = event.clientX - xDelta;
+        let y = event.clientY - yDelta;
+
+
+        mouse.x = (x / this.renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = - (y / this.renderer.domElement.clientHeight) * 2 + 1;
+
+
+
+
+        // mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        // mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 
         this.raycaster.setFromCamera(mouse, this.camera);
 
@@ -566,7 +591,7 @@ class ThreeJsPlayGround extends React.Component {
         return (
             <div ref="stats"
                 onClick={this.handleClick}
-                // onMouseMove={this.handleMouseMove}
+            // onMouseMove={this.handleMouseMove}
             >
                 <canvas
                     className={styles.boardCanvas}
