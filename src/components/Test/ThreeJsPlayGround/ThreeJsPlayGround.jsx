@@ -2,20 +2,24 @@ import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 import * as THREE from 'three';
 import * as d3 from 'd3';
-// var simulation = d3.forceSimulation(nodes);
 
 import fitDimensions from 'components/helpers/fitDimensions.jsx';
 
 
 import styles from './ThreeJsPlayGround.scss';
-
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 import Stats from 'stats.js';
 const OrbitControls = require('three-orbit-controls')(THREE);
 const TransformControls = require('three-transform-controls')(THREE);
 
-let INTERSECTED;
+let MESH_TEMPLATE = undefined;
 
+const IS_SPHERES_VISIBLE = true;
+
+const ANTIALIAS = false;
+
+const TEXT_COLOR = 0x99A6BE;
 
 class ThreeJsPlayGround extends React.Component {
 
@@ -33,6 +37,8 @@ class ThreeJsPlayGround extends React.Component {
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x0A233D);
+        // this.scene.background = new THREE.Color('#edeef0');
+
         const fov = 70;
         const aspect = this.width / this.height;
         const near = 0.1;
@@ -40,56 +46,60 @@ class ThreeJsPlayGround extends React.Component {
 
         this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.mount, antialias: false });
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.mount, antialias: ANTIALIAS });
         this.renderer.setSize(this.width, this.height);
 
-        // this.camera.position.set(-20, 30, 100);
         this.camera.position.set(0, 0, 100);
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-        //reset controls btns
         this.controls.mouseButtons = {
             ORBIT: 2,
             ZOOM: 1,
             PAN: 0
         }
 
-
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.mouse.x = 0;
         this.mouse.y = 0;
 
+        const color = 0xFFFFFF;
+        const intensity = 10;
+        const light = new THREE.AmbientLight(color, intensity);
 
-        var light = new THREE.DirectionalLight(0xffffff, 1);
+        // const light = new THREE.DirectionalLight(color, intensity);
         light.position.set(1, 1, 1).normalize();
         this.scene.add(light);
 
+        this.control = new TransformControls(this.camera, this.renderer.domElement);
+        this.control.addEventListener('objectChange', this.movingControl)
 
 
+        this.scene.add(this.control);
 
 
+        this.loader = new GLTFLoader();
+
+        this.loader.load('/models/serv2/scene.gltf', (gltf) => {
+            var mesh = gltf.scene.children[0];
+
+            MESH_TEMPLATE = mesh.clone();
+
+        }, undefined, function (error) {
+            console.error(error);
+        });
 
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // this.control.addEventListener('change', this.render);
-        // this.control.addEventListener('dragging-changed', function (event) {
-        //     orbit.enabled = !event.value;
-        // });
+        var fontLoader = new THREE.FontLoader();
+
+        fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
+
+            console.log('font loaded')
+            this.loadedFont = font
 
 
-
-
-        // this.controls.screenSpacePanning = true;
-
-        // this.controls.target.set( x, y, z );
-        // this.camera.lookAt();
-
-        // this.controls.enableRotate = false;
-
-
-        // this.camera.lookAt(0, 0, 0);
+        });
 
     }
 
@@ -174,9 +184,10 @@ class ThreeJsPlayGround extends React.Component {
                 console.log('unused key pressed')
         }
 
+        1
     }
 
-    handleClick = (event) => {
+    handleDoubleClick = (event) => {
 
         event.preventDefault();
 
@@ -185,16 +196,6 @@ class ThreeJsPlayGround extends React.Component {
         const xDelta = (window.innerWidth - width) / 2;
         const yDelta = (window.innerHeight - height) / 2;
 
-        // console.log('DELTA', xDelta)
-
-
-
-        // console.log('event.clientX', event.clientX);
-        // console.log('this.renderer.domElement.clientWidth', this.renderer.domElement.clientWidth);
-        // console.log('INNER', window.innerWidth);
-
-
-        // console.log('res', (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1);
 
 
         let x = event.clientX - xDelta;
@@ -204,54 +205,21 @@ class ThreeJsPlayGround extends React.Component {
         mouse.x = (x / this.renderer.domElement.clientWidth) * 2 - 1;
         mouse.y = - (y / this.renderer.domElement.clientHeight) * 2 + 1;
 
-
-
-
-        // mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        // mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
         this.raycaster.setFromCamera(mouse, this.camera);
 
         let intersects = this.raycaster.intersectObjects(this.scene.children);
 
 
         if (intersects.length != 0) {
-            console.log('intersects', intersects[0].object)
+            console.log('click on', intersects[0].object);
+            intersects[0].object.doubleClickAddControl()
         }
-
-
-
-
-
-        // this.raycaster.setFromCamera(mouse, this.camera);
-
-        // var intersects = this.raycaster.intersectObjects(this.scene.children);
-        // if (intersects.length > 0 && intersects[0].object.callback) {
-        //     intersects[0].object.callback();
-        // }
-
-
-    }
-
-
-    handleMouseMove = (event) => {
-        event.preventDefault();
-
-        // this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        // this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
-        this.mouse.x = (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
-        this.mouse.y = - (event.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
-    }
-
-    addCameraControls = () => {
-        document.addEventListener("keydown", this.handlePressAndReplaceCam, false);
     }
 
     getNodesWithLinks = () => {
         const masOfNodes = [];
 
-        const numOfNodes = 2;
+        const numOfNodes = 3;
 
         for (let i = 0; i < numOfNodes; i++) {
             masOfNodes.push({
@@ -261,23 +229,19 @@ class ThreeJsPlayGround extends React.Component {
             });
         }
 
-        //add links
 
-        // masOfNodes[0].links = [1, 2, 3, 4, 6];
-
-        // masOfNodes[5].links = [7, 8, 9, 10];
-        // masOfNodes[7].links = [6];
-
-        // masOfNodes[0].links = [1];
+        masOfNodes[0].links = [0, 1];
+        masOfNodes[1].links = [0];
+        masOfNodes[2].links = [1];
 
 
-        for (let i = 0; i < numOfNodes; i++) {
-            masOfNodes[i].links.forEach(el => {
-                if (!masOfNodes[el].links.includes(i)) {
-                    masOfNodes[el].links.push(i)
-                }
-            });
-        }
+        // for (let i = 0; i < numOfNodes; i++) {
+        //     masOfNodes[i].links.forEach(el => {
+        //         if (!masOfNodes[el].links.includes(i)) {
+        //             masOfNodes[el].links.push(i)
+        //         }
+        //     });
+        // }
 
 
         for (let i = 0; i < numOfNodes; i++) {
@@ -301,66 +265,13 @@ class ThreeJsPlayGround extends React.Component {
         this.initiateCamera();
 
         this.addAsixs();
-        // this.addCameraControls();
 
         this.nodes = this.getNodesWithLinks();
 
 
-        this.nodes.forEach(el => {
-            // Object.defineProperties(el, {
-            //     x: {
-            //         get: function () {
-            //             console.log("getX", this.xx)
-            //             return this.xx;
-            //         },
-            //         set: function (x) {
-            //             console.log("setX", x)
-            //             // this.xx = x;
-            //         }
-            //     },
-            //     y: {
-
-            //         get: function () {
-            //             return this.y;
-            //         },
-
-            //         set: function (y) {
-            //             console.log("setY", y)
-            //         }
-            //     }
-            // });
-        });
-
-
-        // new THREE.Vector3()
-
-        // Object.defineProperties(position, {
-        //     x: {
-        //         get: function () {
-        //             console.log("getX", this.xx)
-        //             return this.xx;
-        //         },
-        //         set: function (x) {
-        //             console.log("setX", x)
-        //             // this.xx = x;
-        //         }
-        //     },
-        //     y:{
-
-        //         get: function () {
-        //             return this.y;
-        //         },
-
-        //         set: function (y) {
-        //             console.log("setY", y)
-        //         }
-        //     }
-        // });
-
-
         this.links = [
-            { "source": 0, "target": 1 },
-            // { "source": 0, "target": 2 },
+            { id: 0, "source": 0, "target": 1 },
+            { id: 1, "source": 0, "target": 2 },
             // { "source": 0, "target": 3 },
             // { "source": 0, "target": 4 },
             // { "source": 5, "target": 6 },
@@ -380,26 +291,14 @@ class ThreeJsPlayGround extends React.Component {
         simulation.velocityDecay(0.4);
         // simulation.speedDecay([20]);
 
-        simulation.tick([20])
-
-        // this.controls.enabled = false
-
-
-        this.startAnimations()
-
-
+        simulation.tick([1]);
+        simulation.on('end', () => {
+            this.startAnimations();
+        });
     }
 
-    componentWillUnmount() {
-        document.removeEventListener("keydown", this.handlePressAndReplaceCam, false);
-    }
 
     startAnimations = () => {
-
-
-        console.log('this.links', _.cloneDeep(this.links))
-        console.log('this.nodes', _.cloneDeep(this.nodes))
-
 
         const radius = 3;
         const widthSegments = 15;
@@ -407,38 +306,41 @@ class ThreeJsPlayGround extends React.Component {
         // const geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
         const geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);
 
-        const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: true });
+        const material = new THREE.MeshBasicMaterial({ wireframe: true, opacity: 0.0 });
+        material.transparent = !IS_SPHERES_VISIBLE
 
-        const weightScaleCoef = 0.5;
-
-
-        this.nodes.forEach(el => {
-            // let newGeometry;
-            // if (el.weight != 1) {
-            //     newGeometry = new THREE.SphereBufferGeometry(radius + el.weight * (weightScaleCoef * radius), widthSegments, heightSegments);
-            // }
-
-            const { x, y } = el
+        for (let i = 0; i < this.nodes.length; i++) {
+            const { x, y } = this.nodes[i]
             const sphereCenter = new THREE.Vector3(x, y, 0);
-            // if (newGeometry) {
-            // this.addSphere(newGeometry, material, sphereCenter, el)
-            // } else {
-            this.addSphere(geometry, material, sphereCenter, el)
-            // }
-        });
+            const elCopy = cloneDeep(this.nodes[i]);
+            this.nodes[i] = this.addSphere(geometry, material, sphereCenter, this.nodes[i], radius);
+            this.nodes[i].aNode = elCopy
+        }
 
-        this.renderLinks(this.links);
-
+        this.renderLinks();
 
         this.animate();
     }
 
-    renderLinks = (links) => {
-        links.forEach(el => {
-            const vector1 = getVectorFromNodeCoordinates(el.source);
-            const vector2 = getVectorFromNodeCoordinates(el.target);
-            this.concatTwoVectorsByCylinder(vector1, vector2)
-        })
+    renderLinks = () => {
+
+        for (let i = 0; i < this.links.length; i++) {
+            const vector1 = getVectorFromNodeCoordinates(this.links[i].source);
+            const vector2 = getVectorFromNodeCoordinates(this.links[i].target);
+
+            const link = this.concatTwoVectorsByCylinder(vector1, vector2);
+
+
+            this.scene.add(link);
+
+            const { source, target, id } = this.links[i]
+
+            this.links[i] = link;
+            this.links[i].sourceNode = source;
+            this.links[i].tagretNode = target;
+            this.links[i].linkId = id;
+
+        }
 
         function getVectorFromNodeCoordinates(node) {
             const { x = vx, y = vy, z = 0 } = node;
@@ -446,17 +348,59 @@ class ThreeJsPlayGround extends React.Component {
         }
     }
 
+    reDrawNodeLinks = (links, replacedNodeId, replacedNodeVector) => {
+
+        this.links.forEach((globalLinksEl, i) => {
+
+            if (links.includes(globalLinksEl.linkId)) {
+                const vector1 = globalLinksEl.sourceNode.id == replacedNodeId ? replacedNodeVector
+                    : this.getNodeMeshById(globalLinksEl.sourceNode.id).position;
+
+                const vector2 = globalLinksEl.tagretNode.id == replacedNodeId ? replacedNodeVector
+                    : this.getNodeMeshById(globalLinksEl.tagretNode.id).position;
+
+
+                const link = this.concatTwoVectorsByCylinder(vector1, vector2);
+
+                this.scene.add(link);
+
+                this.links[i] = link;
+                this.links[i].sourceNode = globalLinksEl.sourceNode;
+                this.links[i].tagretNode = globalLinksEl.tagretNode;
+                this.links[i].linkId = globalLinksEl.linkId;
+
+                this.removeMeshAndGeometryAndMaterial(globalLinksEl)
+            }
+
+        });
+    }
+
+    removeMeshAndGeometryAndMaterial = (meshObj) => {
+        meshObj.geometry.dispose();
+        meshObj.material.dispose();
+        this.scene.remove(meshObj);
+    }
+
+    getNodeMeshById = (id) => {
+        for (let i = 0; i < this.nodes.length; i++) {
+            if (this.nodes[i].aNode.id == id) {
+                return this.nodes[i]
+            }
+        }
+    }
+
     concatTwoVectorsByCylinder = (vstart, vend) => {
+
         const HALF_PI = Math.PI * .5;
         const distance = vstart.distanceTo(vend);
         const position = vend.clone().add(vstart).divideScalar(2);
 
-        const material = new THREE.MeshBasicMaterial({ color: 'yellow', wireframe: true });
+        const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: false });
 
-        const cylinderRadius = 0.5;
+        const cylinderRadius = 0.3;
         const numOfSegments = 8;
 
-        const cylinder = new THREE.CylinderGeometry(cylinderRadius, cylinderRadius, distance, numOfSegments, numOfSegments, false);
+        let cylinder = new THREE.CylinderGeometry(cylinderRadius, cylinderRadius, distance, numOfSegments, numOfSegments, false);
 
         const orientation = new THREE.Matrix4();
         const offsetRotation = new THREE.Matrix4();
@@ -466,55 +410,113 @@ class ThreeJsPlayGround extends React.Component {
         cylinder.applyMatrix(orientation)
 
         const link = new THREE.Mesh(cylinder, material);
-        console.log('link mesh', link)
+
         link.position.set(position.x, position.y, position.z);
-        this.scene.add(link);
+        return link
+
     }
 
     addCylinder = (geometry, material, x, y, z) => {
         const cylinder = new THREE.Mesh(geometry, material);
-        cylinder.aType = 'CYLINDER';
-
         cylinder.position.x = x;
         cylinder.position.y = y;
         cylinder.position.z = z;
-
-        // cylinder.rotateZ(THREE.Math.degToRad(90));
 
         this.scene.add(cylinder);
 
         return cylinder;
     }
 
-    movingControl(movedObjControlInstance) {
+    movingControl = (movedObjControlInstance) => {
         const { x, y, z } = movedObjControlInstance.target.position;
-        console.log('changeObj', movedObjControlInstance.target.object);
+
+        //move model
+        movedObjControlInstance.target.object.modelInstance.position.set(x, y, z);
+
+        //move node text
+        const textMesh = movedObjControlInstance.target.object.textInstance;
+        const shiftX = textMesh.shiftX;
+        const shiftY = textMesh.shiftY;
+        const shiftZ = textMesh.shiftZ;
+        textMesh.position.set(x + shiftX, y + shiftY, z + shiftZ)
+
+        const replacedNode = movedObjControlInstance.target.object.aNode
+        const links = replacedNode.links;
+        if (links && links.length > 0) {
+            this.reDrawNodeLinks(links, movedObjControlInstance.target.object.aNode.id, movedObjControlInstance.target.position)
+        }
+
     }
 
-    addSphere = (geometry, material, vector, el) => {
-        const control = new TransformControls(this.camera, this.renderer.domElement);
-        control.addEventListener('objectChange', this.movingControl)
-        control.enabled = false;
+    addControl = (sphere, control) => () => {
+        if (control.object && control.object.uuid == sphere.uuid) {
+            control.detach(sphere);
+        } else {
+            control.attach(sphere);
+        }
+    }
 
-        // control.disableAxis('x');
-
-        console.log('income', _.cloneDeep(el))
-        const sphere = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: 'green' }));
-
-        sphere.aType = 'SPHERE';
-        sphere.callback = function () { console.log('CAllBAck'); }
+    addSphere = (geometry, material, vector, el, radius) => {
         const { x, y, z } = vector;
-        sphere.position.set(x, y, z);
-        // sphere.position = vector
 
-        console.log('sphere', sphere)
+        const sphere = new THREE.Mesh(geometry, material);
+
+        const textGeometry = new THREE.TextGeometry(el.name, {
+            font: this.loadedFont,
+            size: 1,
+            height: 0.1,
+            curveSegments: 1,
+            bevelEnabled: false,
+            bevelThickness: 1,
+            bevelSize: 1,
+            bevelOffset: 0,
+            bevelSegments: 1
+        });
+        const textMaterial = new THREE.MeshPhongMaterial(
+            { color: TEXT_COLOR }
+        );
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(x, y, z);
+        const { shiftX, shiftY, shiftZ } = getCenteredTextShiftsCoordinates(textMesh, radius);
+
+        textMesh.position.set(x + shiftX, y + shiftY, z + shiftZ);
+
+        textMesh.shiftX = shiftX;
+        textMesh.shiftY = shiftY;
+        textMesh.shiftZ = shiftZ;
+
+
+        const sphereModel = MESH_TEMPLATE.clone();
+
+        const scaledUnit = 0.04
+        sphereModel.scale.set(scaledUnit, scaledUnit, scaledUnit);
+        sphereModel.ATYPE = 'SPHERE CUTOM MESH'
+
+        sphere.doubleClickAddControl = this.addControl(sphere, this.control)
+
+        sphere.position.set(x, y, z);
+        sphere.modelInstance = sphereModel;
+        sphere.textInstance = textMesh;
+
+        sphereModel.position.set(x, y, z);
 
         this.scene.add(sphere);
-
-        // control.attach(sphere);
-
+        this.scene.add(textMesh);
+        this.scene.add(sphereModel);
 
         return sphere;
+
+        function getCenteredTextShiftsCoordinates(textMesh, radius) {
+            let shiftX = 0;
+            let shiftY = -(radius + 2);
+            let shiftZ = 0;
+            const box = new THREE.Box3().setFromObject(textMesh);
+            shiftX = -1 * (box.max.x - box.min.x) / 2
+
+            return { shiftX, shiftY, shiftZ }
+
+        }
+
     }
 
     addCube = (geometry, color, x) => {
@@ -538,28 +540,7 @@ class ThreeJsPlayGround extends React.Component {
             const canvas = this.renderer.domElement;
             this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
             this.camera.updateProjectionMatrix();
-
         }
-
-
-
-        // this.raycaster.setFromCamera(this.mouse, this.camera);
-
-        // let intersects = this.raycaster.intersectObjects(this.scene.children);
-
-        // if (intersects.length > 0) {
-        //     console.log('intersects', intersects[0])
-
-        // }
-
-
-
-        // this.raycaster.setFromCamera(this.mouse, this.camera);
-        // var intersects = this.raycaster.intersectObjects(this.scene.children);
-        // if (intersects.length > 0 &&  intersects[0].object.aType) {
-        //     console.log('intersects[ 0 ].object', intersects[0].object);
-        // }
-
 
 
 
@@ -590,8 +571,7 @@ class ThreeJsPlayGround extends React.Component {
 
         return (
             <div ref="stats"
-                onClick={this.handleClick}
-            // onMouseMove={this.handleMouseMove}
+                onDoubleClick={this.handleDoubleClick}
             >
                 <canvas
                     className={styles.boardCanvas}

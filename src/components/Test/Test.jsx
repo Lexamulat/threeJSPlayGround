@@ -25,6 +25,7 @@ export default class Test extends React.Component {
                 <div className={styles.canvasWrapper}>
                     <ThreeJsPlayGround />
                 </div>
+                {/* <img src='img/dog.jpg'></img> */}
             </div>
         );
     }
