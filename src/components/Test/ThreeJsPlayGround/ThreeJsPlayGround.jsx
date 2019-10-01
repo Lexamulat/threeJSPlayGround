@@ -16,9 +16,9 @@ const TransformControls = require('three-transform-controls')(THREE);
 
 let MESH_TEMPLATE = undefined;
 
-const IS_SPHERES_VISIBLE = true;
+const IS_SPHERES_VISIBLE = false;
 
-const ANTIALIAS = false;
+const ANTIALIAS = true;
 
 const TEXT_COLOR = 0x99A6BE;
 
@@ -27,6 +27,8 @@ let LOADED_FONT = undefined;
 let CLICK_TIMER = undefined;
 const CLEAR_CLICK_TIMER = 200;
 let IS_RIGHT_MOUSE_CLICKED = false;
+
+const TEXT_MESHES_MAP = {};
 
 
 class ThreeJsPlayGround extends React.Component {
@@ -99,7 +101,7 @@ class ThreeJsPlayGround extends React.Component {
         this.loader = new GLTFLoader();
 
         this.loader.load('/models/serv2/scene.gltf', (gltf) => {
-            var mesh = gltf.scene.children[0];
+            let mesh = gltf.scene.children[0];
 
             MESH_TEMPLATE = mesh.clone();
 
@@ -145,9 +147,7 @@ class ThreeJsPlayGround extends React.Component {
         this.scene.add(this.lineX);
         this.scene.add(this.lineY);
         this.scene.add(this.lineZ);
-
     }
-
 
     statsInit = () => {
         this.stats1 = new Stats();
@@ -264,7 +264,7 @@ class ThreeJsPlayGround extends React.Component {
     getNodesWithLinks = () => {
         const masOfNodes = [];
 
-        const numOfNodes = 3;
+        const numOfNodes = 2;
 
         for (let i = 0; i < numOfNodes; i++) {
             masOfNodes.push({
@@ -275,9 +275,14 @@ class ThreeJsPlayGround extends React.Component {
         }
 
 
-        masOfNodes[0].links = [0, 1];
+        // masOfNodes[0].links = [0, 1];
+        // masOfNodes[1].links = [0];
+        // masOfNodes[2].links = [1];
+
+
+        masOfNodes[0].links = [0];
         masOfNodes[1].links = [0];
-        masOfNodes[2].links = [1];
+        // masOfNodes[2].links = [1];
 
 
         // for (let i = 0; i < numOfNodes; i++) {
@@ -316,7 +321,7 @@ class ThreeJsPlayGround extends React.Component {
 
         this.links = [
             { id: 0, "source": 0, "target": 1, text: 'link 0' },
-            { id: 1, "source": 0, "target": 2, text: 'link 1' },
+            // { id: 1, "source": 0, "target": 2, text: 'link 1' },
             // { "source": 0, "target": 3 },
             // { "source": 0, "target": 4 },
             // { "source": 5, "target": 6 },
@@ -370,6 +375,9 @@ class ThreeJsPlayGround extends React.Component {
 
         this.renderLinks();
 
+        // const sprite = this.makeTextSprite("bla");
+        // this.scene.add(sprite);
+
         this.animate();
     }
 
@@ -390,7 +398,10 @@ class ThreeJsPlayGround extends React.Component {
             textMesh.shiftY = shiftY;
             textMesh.shiftZ = shiftZ;
 
-            this.scene.add(textMesh)
+            this.scene.add(textMesh);
+
+            TEXT_MESHES_MAP[textMesh.uuid] = textMesh
+
             this.scene.add(link);
 
             const { source, target, id } = this.links[i]
@@ -578,16 +589,23 @@ class ThreeJsPlayGround extends React.Component {
         const textMaterial = new THREE.MeshPhongMaterial(
             { color: TEXT_COLOR }
         );
+
+        // const textMesh = this.makeTextSprite("bla");
+        // textMesh.position.copy(vector);
+
         const textMesh = new THREE.Mesh(textGeometry, textMaterial);
         textMesh.position.set(x, y, z);
         const { shiftX, shiftY, shiftZ } = this.getCenteredTextShiftsCoordinates(textMesh, undefined, -1 * (radius + 2), undefined);
+
+        // textMesh.position.copy(new THREE.Vector3(x + shiftX, y + shiftY, z + shiftZ));
+        textMesh.position.set(x + shiftX, y + shiftY, z + shiftZ);
+
 
         textMesh.position.set(x + shiftX, y + shiftY, z + shiftZ);
 
         textMesh.shiftX = shiftX;
         textMesh.shiftY = shiftY;
         textMesh.shiftZ = shiftZ;
-
 
         const sphereModel = MESH_TEMPLATE.clone();
 
@@ -599,17 +617,83 @@ class ThreeJsPlayGround extends React.Component {
 
         sphere.position.set(x, y, z);
         sphere.modelInstance = sphereModel;
+
         sphere.textInstance = textMesh;
 
         sphereModel.position.set(x, y, z);
 
         this.scene.add(sphere);
+
+
+        TEXT_MESHES_MAP[textMesh.uuid] = textMesh
         this.scene.add(textMesh);
+
+
         this.scene.add(sphereModel);
 
         return sphere;
+    }
 
+    // makeTextSprite(message, opts) {
+    //     let parameters = opts || {};
+    //     let fontface = parameters.fontface || 'Helvetica';
+    //     let fontsize = parameters.fontsize || 50;
+    //     let canvas = document.createElement('canvas');
+    //     let context = canvas.getContext('2d');
+    //     context.font = fontsize + "px " + fontface;
 
+    //     // get size data (height depends only on font size)
+    //     let metrics = context.measureText(message);
+    //     let textWidth = metrics.width;
+    //     console.log('text width', textWidth)
+
+    //     // text color
+    //     context.fillStyle = 'rgba(255, 255, 255, 1.0)';
+    //     context.fillText(message, 0, fontsize);
+
+    //     // canvas contents will be used for a texture
+    //     let texture = new THREE.Texture(canvas)
+    //     texture.minFilter = THREE.LinearFilter;
+    //     texture.needsUpdate = true;
+
+    //     let spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+    //     let sprite = new THREE.Sprite(spriteMaterial);
+    //     sprite.scale.set(8, 5, 1.0);
+    //     sprite.center.set(0, 0.8);
+    //     return sprite;
+    // }
+    makeTextSprite(message, parameters) {
+        if (parameters === undefined) parameters = {};
+        var fontface = parameters.hasOwnProperty("fontface") ? parameters["fontface"] : "Arial";
+        var fontsize = parameters.hasOwnProperty("fontsize") ? parameters["fontsize"] : 18;
+        var borderThickness = parameters.hasOwnProperty("borderThickness") ? parameters["borderThickness"] : 4;
+        var borderColor = parameters.hasOwnProperty("borderColor") ? parameters["borderColor"] : { r: 0, g: 0, b: 0, a: 1.0 };
+        var backgroundColor = parameters.hasOwnProperty("backgroundColor") ? parameters["backgroundColor"] : { r: 255, g: 255, b: 255, a: 1.0 };
+        var textColor = parameters.hasOwnProperty("textColor") ? parameters["textColor"] : { r: 0, g: 0, b: 0, a: 1.0 };
+
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+        context.font = "Bold " + fontsize + "px " + fontface;
+        var metrics = context.measureText(message);
+        var textWidth = metrics.width;
+
+        context.fillStyle = "rgba(" + backgroundColor.r + "," + backgroundColor.g + "," + backgroundColor.b + "," + backgroundColor.a + ")";
+        context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + "," + borderColor.b + "," + borderColor.a + ")";
+
+        context.lineWidth = borderThickness;
+        roundRect(context, borderThickness / 2, borderThickness / 2, (textWidth + borderThickness) * 1.1, fontsize * 1.4 + borderThickness, 8);
+
+        context.fillStyle = "rgba(" + textColor.r + ", " + textColor.g + ", " + textColor.b + ", 1.0)";
+        context.fillText(message, borderThickness, fontsize + borderThickness);
+
+        var texture = new THREE.Texture(canvas)
+        texture.needsUpdate = true;
+
+        var spriteMaterial = new THREE.SpriteMaterial({ map: texture, useScreenCoordinates: false });
+        var sprite = new THREE.Sprite(spriteMaterial);
+        sprite.scale.set(0.5 * fontsize, 0.25 * fontsize, 0.75 * fontsize);
+        return sprite;
+        function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); ctx.fill(); ctx.stroke(); }
     }
 
     getCenteredTextShiftsCoordinates(textMesh, xInitialShift = 0, yInitialShift = 0, zInitialShift = 0) {
@@ -617,6 +701,7 @@ class ThreeJsPlayGround extends React.Component {
         let shiftY = yInitialShift;
         let shiftZ = zInitialShift;
         const box = new THREE.Box3().setFromObject(textMesh);
+
         shiftX = -1 * (box.max.x - box.min.x) / 2
 
         return { shiftX, shiftY, shiftZ }
@@ -650,10 +735,18 @@ class ThreeJsPlayGround extends React.Component {
 
         this.controls.update();
         this.renderer.render(this.scene, this.camera);
+        this.updateTextMeshes();
 
         this.stats1.end();
         this.stats2.end();
         this.frameId = window.requestAnimationFrame(this.animate);
+
+    }
+
+    updateTextMeshes = () => {
+        Object.keys(TEXT_MESHES_MAP).forEach(el => {
+            TEXT_MESHES_MAP[el].quaternion.copy(this.camera.quaternion)
+        });
 
     }
 
@@ -668,7 +761,6 @@ class ThreeJsPlayGround extends React.Component {
         }
         return needResize;
     }
-
 
     render() {
 
