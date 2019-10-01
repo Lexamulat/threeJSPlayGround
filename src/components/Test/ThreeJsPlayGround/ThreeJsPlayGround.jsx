@@ -10,6 +10,7 @@ import styles from './ThreeJsPlayGround.scss';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 import Stats from 'stats.js';
+import { clearInterval } from 'timers';
 const OrbitControls = require('three-orbit-controls')(THREE);
 const TransformControls = require('three-transform-controls')(THREE);
 
@@ -20,6 +21,13 @@ const IS_SPHERES_VISIBLE = true;
 const ANTIALIAS = false;
 
 const TEXT_COLOR = 0x99A6BE;
+
+let LOADED_FONT = undefined;
+
+let CLICK_TIMER = undefined;
+const CLEAR_CLICK_TIMER = 200;
+let IS_RIGHT_MOUSE_CLICKED = false;
+
 
 class ThreeJsPlayGround extends React.Component {
 
@@ -58,6 +66,15 @@ class ThreeJsPlayGround extends React.Component {
             ZOOM: 1,
             PAN: 0
         }
+        // this.controls = new THREE.TrackballControls(this.camera);
+        // this.controls.rotateSpeed = 1.0;
+        // this.controls.zoomSpeed = 1.2;
+        // this.controls.panSpeed = 0.8;
+        // this.controls.noZoom = false;
+        // this.controls.noPan = false;
+        // this.controls.staticMoving = true;
+        // this.controls.dynamicDampingFactor = 0.3;
+
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
@@ -95,9 +112,7 @@ class ThreeJsPlayGround extends React.Component {
 
         fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
 
-            console.log('font loaded')
-            this.loadedFont = font
-
+            LOADED_FONT = font
 
         });
 
@@ -184,18 +199,57 @@ class ThreeJsPlayGround extends React.Component {
                 console.log('unused key pressed')
         }
 
-        1
+
+    }
+
+    handleMouseDown = (event) => {
+        //handle right mouse btn
+        if (event.button != 2) return;
+
+        IS_RIGHT_MOUSE_CLICKED = true;
+
+        CLICK_TIMER = setTimeout(() => {
+            IS_RIGHT_MOUSE_CLICKED = false
+        }, CLEAR_CLICK_TIMER)
+
+    }
+    handleMouseUp = (event) => {
+        //handle right mouse btn
+        if (event.button != 2) return;
+
+        if (IS_RIGHT_MOUSE_CLICKED) {
+            const mouse = this.getMouseCoordinatesFromEvent(event)
+            const currentMesh = this.getCurrenRayCastObj(mouse);
+            if (currentMesh.aNode) {
+                const { x, y, z } = currentMesh.position;
+                this.controls.target.set(x, y, z);
+            }
+        }
     }
 
     handleDoubleClick = (event) => {
-
         event.preventDefault();
+
+        const mouse = this.getMouseCoordinatesFromEvent(event)
+        const currentMesh = this.getCurrenRayCastObj(mouse)
+        currentMesh.doubleClickAddControl()
+
+    }
+
+    getCurrenRayCastObj(mouse) {
+        this.raycaster.setFromCamera(mouse, this.camera);
+        let intersects = this.raycaster.intersectObjects(this.scene.children);
+        if (intersects.length != 0) {
+            return intersects[0].object
+        }
+    }
+
+    getMouseCoordinatesFromEvent() {
 
         let mouse = new THREE.Vector2();
         const { width, height } = this.props;
         const xDelta = (window.innerWidth - width) / 2;
         const yDelta = (window.innerHeight - height) / 2;
-
 
 
         let x = event.clientX - xDelta;
@@ -204,16 +258,7 @@ class ThreeJsPlayGround extends React.Component {
 
         mouse.x = (x / this.renderer.domElement.clientWidth) * 2 - 1;
         mouse.y = - (y / this.renderer.domElement.clientHeight) * 2 + 1;
-
-        this.raycaster.setFromCamera(mouse, this.camera);
-
-        let intersects = this.raycaster.intersectObjects(this.scene.children);
-
-
-        if (intersects.length != 0) {
-            console.log('click on', intersects[0].object);
-            intersects[0].object.doubleClickAddControl()
-        }
+        return mouse
     }
 
     getNodesWithLinks = () => {
@@ -270,8 +315,8 @@ class ThreeJsPlayGround extends React.Component {
 
 
         this.links = [
-            { id: 0, "source": 0, "target": 1 },
-            { id: 1, "source": 0, "target": 2 },
+            { id: 0, "source": 0, "target": 1, text: 'link 0' },
+            { id: 1, "source": 0, "target": 2, text: 'link 1' },
             // { "source": 0, "target": 3 },
             // { "source": 0, "target": 4 },
             // { "source": 5, "target": 6 },
@@ -288,15 +333,21 @@ class ThreeJsPlayGround extends React.Component {
         // .force("center", d3.forceCenter());
 
         //default
-        simulation.velocityDecay(0.4);
-        // simulation.speedDecay([20]);
+        simulation.velocityDecay(0.6);
 
         simulation.tick([1]);
         simulation.on('end', () => {
             this.startAnimations();
         });
-    }
 
+        // this.startAnimations();
+
+    }
+    componentWillUnmount() {
+        if (CLICK_TIMER) {
+            clearInterval(CLICK_TIMER)
+        }
+    }
 
     startAnimations = () => {
 
@@ -330,7 +381,16 @@ class ThreeJsPlayGround extends React.Component {
 
             const link = this.concatTwoVectorsByCylinder(vector1, vector2);
 
+            const textMesh = addLinktext(link.position, this.links[i].text)
 
+            //xInitialShift yInitialShift zInitialShift
+            const { shiftX, shiftY, shiftZ } = this.getCenteredTextShiftsCoordinates(textMesh, undefined, undefined, 1);
+            textMesh.position.set(link.position.x + shiftX, link.position.y + shiftY, link.position.z + shiftZ);
+            textMesh.shiftX = shiftX;
+            textMesh.shiftY = shiftY;
+            textMesh.shiftZ = shiftZ;
+
+            this.scene.add(textMesh)
             this.scene.add(link);
 
             const { source, target, id } = this.links[i]
@@ -339,12 +399,38 @@ class ThreeJsPlayGround extends React.Component {
             this.links[i].sourceNode = source;
             this.links[i].tagretNode = target;
             this.links[i].linkId = id;
+            this.links[i].textInstance = textMesh;
+
 
         }
 
         function getVectorFromNodeCoordinates(node) {
             const { x = vx, y = vy, z = 0 } = node;
             return new THREE.Vector3(x, y, z)
+        }
+
+        function addLinktext(position, text) {
+
+            const textGeometry = new THREE.TextGeometry(text, {
+                font: LOADED_FONT,
+                size: 1,
+                height: 0.1,
+                curveSegments: 1,
+                bevelEnabled: false,
+                bevelThickness: 1,
+                bevelSize: 1,
+                bevelOffset: 0,
+                bevelSegments: 1
+            });
+            const textMaterial = new THREE.MeshPhongMaterial(
+                { color: TEXT_COLOR }
+            );
+
+            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+            textMesh.position.set(position.x, position.y, position.z);
+
+
+            return textMesh
         }
     }
 
@@ -362,12 +448,20 @@ class ThreeJsPlayGround extends React.Component {
 
                 const link = this.concatTwoVectorsByCylinder(vector1, vector2);
 
+                const { x, y, z } = link.position
+                this.updateTextMeshPosition(globalLinksEl.textInstance, x, y, z);
+
+                this.scene.add(link);
+
+
+
                 this.scene.add(link);
 
                 this.links[i] = link;
                 this.links[i].sourceNode = globalLinksEl.sourceNode;
                 this.links[i].tagretNode = globalLinksEl.tagretNode;
                 this.links[i].linkId = globalLinksEl.linkId;
+                this.links[i].textInstance = globalLinksEl.textInstance;
 
                 this.removeMeshAndGeometryAndMaterial(globalLinksEl)
             }
@@ -395,7 +489,7 @@ class ThreeJsPlayGround extends React.Component {
         const distance = vstart.distanceTo(vend);
         const position = vend.clone().add(vstart).divideScalar(2);
 
-        const material = new THREE.MeshBasicMaterial({ color: 'green', wireframe: false });
+        const material = new THREE.MeshBasicMaterial({ color: 'grey', wireframe: false });
 
         const cylinderRadius = 0.3;
         const numOfSegments = 8;
@@ -412,6 +506,9 @@ class ThreeJsPlayGround extends React.Component {
         const link = new THREE.Mesh(cylinder, material);
 
         link.position.set(position.x, position.y, position.z);
+
+
+
         return link
 
     }
@@ -435,10 +532,8 @@ class ThreeJsPlayGround extends React.Component {
 
         //move node text
         const textMesh = movedObjControlInstance.target.object.textInstance;
-        const shiftX = textMesh.shiftX;
-        const shiftY = textMesh.shiftY;
-        const shiftZ = textMesh.shiftZ;
-        textMesh.position.set(x + shiftX, y + shiftY, z + shiftZ)
+
+        this.updateTextMeshPosition(textMesh, x, y, z);
 
         const replacedNode = movedObjControlInstance.target.object.aNode
         const links = replacedNode.links;
@@ -448,11 +543,19 @@ class ThreeJsPlayGround extends React.Component {
 
     }
 
+    updateTextMeshPosition(textMesh, x, y, z) {
+        const shiftX = textMesh.shiftX;
+        const shiftY = textMesh.shiftY;
+        const shiftZ = textMesh.shiftZ;
+        textMesh.position.set(x + shiftX, y + shiftY, z + shiftZ);
+    }
+
     addControl = (sphere, control) => () => {
         if (control.object && control.object.uuid == sphere.uuid) {
             control.detach(sphere);
         } else {
             control.attach(sphere);
+
         }
     }
 
@@ -462,7 +565,7 @@ class ThreeJsPlayGround extends React.Component {
         const sphere = new THREE.Mesh(geometry, material);
 
         const textGeometry = new THREE.TextGeometry(el.name, {
-            font: this.loadedFont,
+            font: LOADED_FONT,
             size: 1,
             height: 0.1,
             curveSegments: 1,
@@ -477,7 +580,7 @@ class ThreeJsPlayGround extends React.Component {
         );
         const textMesh = new THREE.Mesh(textGeometry, textMaterial);
         textMesh.position.set(x, y, z);
-        const { shiftX, shiftY, shiftZ } = getCenteredTextShiftsCoordinates(textMesh, radius);
+        const { shiftX, shiftY, shiftZ } = this.getCenteredTextShiftsCoordinates(textMesh, undefined, -1 * (radius + 2), undefined);
 
         textMesh.position.set(x + shiftX, y + shiftY, z + shiftZ);
 
@@ -506,18 +609,20 @@ class ThreeJsPlayGround extends React.Component {
 
         return sphere;
 
-        function getCenteredTextShiftsCoordinates(textMesh, radius) {
-            let shiftX = 0;
-            let shiftY = -(radius + 2);
-            let shiftZ = 0;
-            const box = new THREE.Box3().setFromObject(textMesh);
-            shiftX = -1 * (box.max.x - box.min.x) / 2
-
-            return { shiftX, shiftY, shiftZ }
-
-        }
 
     }
+
+    getCenteredTextShiftsCoordinates(textMesh, xInitialShift = 0, yInitialShift = 0, zInitialShift = 0) {
+        let shiftX = xInitialShift;
+        let shiftY = yInitialShift;
+        let shiftZ = zInitialShift;
+        const box = new THREE.Box3().setFromObject(textMesh);
+        shiftX = -1 * (box.max.x - box.min.x) / 2
+
+        return { shiftX, shiftY, shiftZ }
+
+    }
+
 
     addCube = (geometry, color, x) => {
         const material = new THREE.MeshBasicMaterial({ color });
@@ -543,7 +648,7 @@ class ThreeJsPlayGround extends React.Component {
         }
 
 
-
+        this.controls.update();
         this.renderer.render(this.scene, this.camera);
 
         this.stats1.end();
@@ -572,6 +677,9 @@ class ThreeJsPlayGround extends React.Component {
         return (
             <div ref="stats"
                 onDoubleClick={this.handleDoubleClick}
+                onMouseDown={this.handleMouseDown}
+                onMouseUp={this.handleMouseUp}
+
             >
                 <canvas
                     className={styles.boardCanvas}
